@@ -68,7 +68,6 @@ public class CompraService {
     	
     	//compra.setDetallesCompra(compraDTO.getProductos());
     	
-    	compra.setPagos(mapPagoDTOsToPagos(compraDTO.getMediosPago(), compra));
     	return null;
     }   
 }
