@@ -10,28 +10,25 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "cliente")
-public class Cliente {
+@Table(name = "vendedor")
+public class Vendedor {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	@Column(length = 20)
+	@Column(length = 200)
 	private String nombre;
-	@Column(length = 100)
+	@Column(length = 20)
 	private String documento;
-	@ManyToOne
-	@JoinColumn(name = "tipo_documento_id")
-	private TipoDocumento tipoDocumento;
+	@Column(length = 50)
+	private String email;
 	
-	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "vendedor", cascade = CascadeType.ALL)
 	@JsonIgnore
 	List<Compra> compras = null;
 }

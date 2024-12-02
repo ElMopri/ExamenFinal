@@ -18,20 +18,24 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "cliente")
-public class Cliente {
+@Table(name = "cajero")
+public class Cajero {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
-	@Column(length = 20)
+	@Column(length = 200)
 	private String nombre;
-	@Column(length = 100)
+	@Column(length = 20)
 	private String documento;
 	@ManyToOne
-	@JoinColumn(name = "tipo_documento_id")
-	private TipoDocumento tipoDocumento;
+	@JoinColumn(name = "tienda_id")
+	private Tienda tienda;
+	@Column(length = 50)
+	private String email;
+	@Column(length = 100)
+	private String token;
 	
-	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL)
+	@OneToMany(mappedBy = "cajero", cascade = CascadeType.ALL)
 	@JsonIgnore
 	List<Compra> compras = null;
 }
