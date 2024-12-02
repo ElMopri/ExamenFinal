@@ -6,12 +6,8 @@ import lombok.Data;
 
 @Data
 public class PagoDTO {
-	private TipoPagoDTO tipo_pago;
-	private TarjetaTipo tipo_targeta;
+	private String tipo_pago;
+	private String tipo_tarjeta;
 	private int cuotas;
 	private BigDecimal valor;
-	
-    enum TarjetaTipo {
-        VISA, MASTERCARD;
-    }
 }

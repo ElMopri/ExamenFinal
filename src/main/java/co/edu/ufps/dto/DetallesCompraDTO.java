@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class DetallesCompraDTO {
-    private ProductoDTO productoDTO;
+    private String referencia;
     private Integer cantidad;
     private BigDecimal descuento;
 }
