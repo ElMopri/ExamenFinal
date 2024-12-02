@@ -3,7 +3,6 @@ package co.edu.ufps.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
-import co.edu.ufps.entities.DetallesCompra;
 import lombok.Data;
 
 @Data
