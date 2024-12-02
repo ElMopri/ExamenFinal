@@ -32,7 +32,7 @@ public class Pago {
     @Column(name = "tarjeta_tipo", nullable = false)
     private TarjetaTipo tarjetaTipo;
     
-    enum TarjetaTipo {
+    public enum TarjetaTipo {
         VISA, MASTERCARD;
     }
     

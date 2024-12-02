@@ -48,7 +48,7 @@ public class Compra {
 	
 	@OneToMany(mappedBy = "compra", cascade = CascadeType.ALL)
 	@JsonIgnore
-	List<DetallesCompra> detallesCompra = null;
+	List<DetallesCompra> detallesCompras = null;
 	
 	@OneToMany(mappedBy = "compra", cascade = CascadeType.ALL)
 	@JsonIgnore
