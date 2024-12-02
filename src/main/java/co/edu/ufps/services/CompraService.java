@@ -38,7 +38,7 @@ public class CompraService {
     private TipoDocumentoRepository tipoDocumentoRepository;
     
     @Autowired
-    private DetallesCompraRepository DetallesCompraRepository;
+    private DetallesCompraRepository detallesCompraRepository;
 
     @Autowired
     private ClienteRepository clienteRepository;
@@ -63,7 +63,7 @@ public class CompraService {
     	List<DetallesCompra> productos;
     	List<DetallesCompraDTO> productosDTO = compraDTO.getProductos();
     	for (DetallesCompraDTO producto : productosDTO) {
-    	    productos.add(DetallesCompraRepository(producto.getProductoDTO().getNombre()));
+    		
     	}
     	
     	//compra.setDetallesCompra(compraDTO.getProductos());
