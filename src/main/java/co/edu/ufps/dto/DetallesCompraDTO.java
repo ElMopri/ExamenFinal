@@ -8,5 +8,5 @@ import lombok.Data;
 public class DetallesCompraDTO {
     private String referencia;
     private Integer cantidad;
-    private BigDecimal descuento;
+    private BigDecimal descuento = BigDecimal.ZERO;
 }

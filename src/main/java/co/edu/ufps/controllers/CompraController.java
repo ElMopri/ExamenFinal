@@ -1,6 +1,7 @@
 package co.edu.ufps.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +22,18 @@ public class CompraController {
 	
     @PostMapping("/crear/{uuid}")
     public ResponseEntity<CompraDTO> crear(@PathVariable String uuid,@RequestBody CompraRequestDTO compraRequestDTO) {
-        return ResponseEntity.ok(compraService.crear(uuid, compraRequestDTO));
+    	
+    	CompraDTO respuesta = compraService.crear(uuid, compraRequestDTO);
+    	
+    	if(respuesta.getStatus().equals("404")) {
+    		respuesta.setStatus("error");
+    		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(respuesta);
+    	}
+    	if(respuesta.getStatus().equals("403")) {
+    		respuesta.setStatus("error");
+    		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(respuesta);
+    	}
+    	
+        return ResponseEntity.ok(respuesta);
     }
 }

@@ -7,10 +7,10 @@ import lombok.Data;
 
 @Data
 public class CompraRequestDTO {
-    private BigDecimal impuesto;
-    private ClienteDTO cliente;
-    private List<DetallesCompraDTO> productos;
-    private List<PagoDTO> medios_pago;
-    private VendedorDTO vendedor;
-    private CajeroDTO cajero;
+    private BigDecimal impuesto = null;
+    private ClienteDTO cliente = null;
+    private List<DetallesCompraDTO> productos = null;
+    private List<PagoDTO> medios_pago = null;
+    private VendedorDTO vendedor = null;
+    private CajeroDTO cajero = null;
 }

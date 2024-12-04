@@ -1,5 +1,6 @@
 package co.edu.ufps.services;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +71,14 @@ public class CompraService {
     		Compra compra = new Compra();
     		compra.setTienda(tienda);
     		
+			compra.setImpuestos(compraRequestDTO.getImpuesto());
+			
+    		if(compraRequestDTO.getCliente() == null) {
+    			compraDTO.setStatus("404");
+				compraDTO.setMessage("No hay información del cliente");
+				return compraDTO; //Status 404
+    		}
+    		
     		Cliente cliente = clienteRepository.findByDocumentoAndTipoDocumento_Nombre(compraRequestDTO.getCliente().getDocumento(),compraRequestDTO.getCliente().getTipo_documento());
     		if(cliente != null) { // el cliente ya existe
     			compra.setCliente(cliente);
@@ -79,13 +88,20 @@ public class CompraService {
     			cliente.setDocumento(compraRequestDTO.getCliente().getDocumento());
     			cliente.setNombre(compraRequestDTO.getCliente().getNombre());
     			TipoDocumento tipoDocumento = tipoDocumentoRepository.findByNombre(compraRequestDTO.getCliente().getTipo_documento());
-    			if(tipoDocumento != null) { // el tipo de documento ya existe
+    			if(tipoDocumento != null) { 
     				cliente.setTipoDocumento(tipoDocumento);
-    				clienteRepository.save(cliente); // crear el cliente
+    				clienteRepository.save(cliente); 
     			} else {
+    				compraDTO.setStatus("404");
     				compraDTO.setMessage("No existe ese tipo de documento");
-    				return compraDTO;//No existe ese tipo de documento
+    				return compraDTO;
     			}
+    		}
+    		
+    		if(compraRequestDTO.getProductos().isEmpty()) {
+    			compraDTO.setStatus("404");
+				compraDTO.setMessage("No hay productos asignados para esta compra");
+				return compraDTO; //Status 404
     		}
     		
     		List<DetallesCompra> detallesCompras = new ArrayList<>();
@@ -101,11 +117,24 @@ public class CompraService {
 	    				detallesCompra.setPrecio(producto.getPrecio());
 	    				detallesCompra.setDescuento(detallesCompraDTO.getDescuento());
 	    				detallesCompras.add(detallesCompra);
+	    				
+	    				BigDecimal cien = new BigDecimal(100);
+	    				BigDecimal descuentoProducto = producto.getPrecio().multiply(detallesCompraDTO.getDescuento().divide(cien));
+	    				BigDecimal productoPrecio = producto.getPrecio().subtract(descuentoProducto);
+	    				
+	    				BigDecimal productoFinal = productoPrecio.multiply(new BigDecimal(detallesCompraDTO.getCantidad()));
+	    				
+	    				BigDecimal impuestoProductoFinal = productoFinal.multiply(compra.getImpuestos().divide(cien));
+	    				
+	    				compra.setTotal(compra.getTotal().add(productoFinal.add(impuestoProductoFinal)));
+	    				
     				} else {
+    					compraDTO.setStatus("403");
         				compraDTO.setMessage("La cantidad a comprar de "+producto.getNombre()+" supera el máximo del producto en tienda");
         				return compraDTO; //Status 403
     				}
     			} else {
+    				compraDTO.setStatus("404");
     				compraDTO.setMessage("La referencia del producto "+detallesCompraDTO.getReferencia()+" no existe, por favor revisar los datos");
     				return compraDTO; //Status 404
     			}
@@ -113,12 +142,21 @@ public class CompraService {
     		
     		compra.setDetallesCompras(detallesCompras);
     		
+    		if(compraRequestDTO.getMedios_pago().isEmpty()) {
+    			compraDTO.setStatus("404");
+				compraDTO.setMessage("No hay medios de pagos asignados para esta compra");
+				return compraDTO; //Status 404
+    		}
+    		
     		List<Pago> pagos = new ArrayList<Pago>();
+    		
+    		BigDecimal compraTotal = BigDecimal.ZERO;
     		
     		for (PagoDTO mediosPago : compraRequestDTO.getMedios_pago()) {
     			
     			TipoPago tipoPago = tipoPagoRepository.findByNombre(mediosPago.getTipo_pago());
     			if (tipoPago == null) {
+    				compraDTO.setStatus("403");
     				compraDTO.setMessage("Tipo de pago "+mediosPago.getTipo_pago()+" no permitido en la tienda");
     				return compraDTO; //Status 403
     			}
@@ -129,6 +167,7 @@ public class CompraService {
     					tarjetaTipo = TarjetaTipo.valueOf(mediosPago.getTipo_tarjeta().toUpperCase());
     				}
     			} catch (IllegalArgumentException e) {
+    				compraDTO.setStatus("404");
     				compraDTO.setMessage("No existe ese tipo de tarjeta");
     				return compraDTO;
     			}
@@ -146,32 +185,52 @@ public class CompraService {
 				pago.setCuotas(mediosPago.getCuotas()<=0 ? 0 : mediosPago.getCuotas());
 				pago.setValor(mediosPago.getValor());
 				pagos.add(pago);
-				compra.setTotal(compra.getTotal().add(pago.getValor()));
+				compraTotal = compraTotal.add(mediosPago.getValor());
+    		}
+    		
+    		if(compra.getTotal().compareTo(compraTotal)!=0) {
+    			compraDTO.setStatus("403");
+				compraDTO.setMessage("El valor de la factura no coincide con el valor total de los pagos");
+				return compraDTO; //Status 403
     		}
     		
     		compra.setPagos(pagos);
+    		
+    		if(compraRequestDTO.getVendedor() == null) {
+    			compraDTO.setStatus("404");
+				compraDTO.setMessage("No hay información del vendedor");
+				return compraDTO; //Status 404
+    		}
     		
 			Vendedor vendedor = vendedorRepository.findByDocumento(compraRequestDTO.getVendedor().getDocumento());
 			if (vendedor != null) {
 				compra.setVendedor(vendedor);
 			} else {
+				compraDTO.setStatus("404");
 				compraDTO.setMessage("El vendedor no existe en la tienda");
 				return compraDTO; //Status 404
 			}
+			
+    		if(compraRequestDTO.getCajero() == null) {
+    			compraDTO.setStatus("404");
+				compraDTO.setMessage("No hay información del cajero");
+				return compraDTO; //Status 404
+    		}
 			
 			Cajero cajero = cajeroRepository.findByToken(compraRequestDTO.getCajero().getToken());
 			if (cajero != null) {
 				if (cajero.getTienda().getId().equals(tienda.getId())) {
 					compra.setCajero(cajero);
 				} else {
+					compraDTO.setStatus("403");
 					compraDTO.setMessage("El cajero no está asignado a esta tienda");
 					return compraDTO; //Status 403
 				}
 			} else {
+				compraDTO.setStatus("404");
 				compraDTO.setMessage("El token no corresponde a ningún cajero en la tienda");
 				return compraDTO; //Status 404
 			}
-			compra.setImpuestos(compraRequestDTO.getImpuesto());
 			compra.setObservaciones("Ninguna");
 			compra = compraRepository.save(compra);
 			
@@ -187,6 +246,7 @@ public class CompraService {
     		return compraDTO;
     	}
     	
+    	compraDTO.setStatus("404");
     	compraDTO.setMessage("No existe la tienda");
     	
     	return compraDTO;
