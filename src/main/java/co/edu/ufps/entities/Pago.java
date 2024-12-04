@@ -29,7 +29,7 @@ public class Pago {
 	private TipoPago tipoPago;
 	
     @Enumerated(EnumType.STRING)
-    @Column(name = "tarjeta_tipo", nullable = false)
+    @Column(name = "tarjeta_tipo")
     private TarjetaTipo tarjetaTipo;
     
     public enum TarjetaTipo {

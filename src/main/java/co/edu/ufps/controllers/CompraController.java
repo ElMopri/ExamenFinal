@@ -19,8 +19,8 @@ public class CompraController {
     @Autowired
     private CompraService compraService;
 	
-    @PostMapping("/{uuid}")
-    public ResponseEntity<CompraDTO> create(@PathVariable String uuid,@RequestBody CompraRequestDTO compraRequestDTO) {
+    @PostMapping("/crear/{uuid}")
+    public ResponseEntity<CompraDTO> crear(@PathVariable String uuid,@RequestBody CompraRequestDTO compraRequestDTO) {
         return ResponseEntity.ok(compraService.crear(uuid, compraRequestDTO));
     }
 }

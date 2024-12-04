@@ -1,5 +1,9 @@
 package co.edu.ufps.services;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +17,7 @@ import co.edu.ufps.entities.Cliente;
 import co.edu.ufps.entities.Compra;
 import co.edu.ufps.entities.DetallesCompra;
 import co.edu.ufps.entities.Pago;
+import co.edu.ufps.entities.Producto;
 import co.edu.ufps.entities.Tienda;
 import co.edu.ufps.entities.TipoDocumento;
 import co.edu.ufps.entities.TipoPago;
@@ -20,7 +25,7 @@ import co.edu.ufps.entities.Vendedor;
 import co.edu.ufps.repositories.CajeroRepository;
 import co.edu.ufps.repositories.ClienteRepository;
 import co.edu.ufps.repositories.CompraRepository;
-import co.edu.ufps.repositories.DetallesCompraRepository;
+import co.edu.ufps.repositories.ProductoRepository;
 import co.edu.ufps.repositories.TiendaRepository;
 import co.edu.ufps.repositories.TipoDocumentoRepository;
 import co.edu.ufps.repositories.TipoPagoRepository;
@@ -48,10 +53,10 @@ public class CompraService {
     private CajeroRepository cajeroRepository;
     
     @Autowired
-    private DetallesCompraRepository detallesCompraRepository;
+    private TipoPagoRepository tipoPagoRepository;
     
     @Autowired
-    private TipoPagoRepository tipoPagoRepository;
+    private ProductoRepository productoRepository;
     
     public CompraDTO crear (String uuid, CompraRequestDTO compraRequestDTO) {
     	
@@ -59,16 +64,17 @@ public class CompraService {
     	compraDTO.setStatus("error");
     	compraDTO.setData(null);
     	
-    	Tienda tienda = tiendaRepository.findByUuid(uuid);
-    	if(tienda != null) {
-    		
+    	Optional<Tienda> tiendaOpt = tiendaRepository.findFirstByUuid(uuid);
+    	if(tiendaOpt.isPresent()) {
+    		Tienda tienda = tiendaOpt.get();
     		Compra compra = new Compra();
     		compra.setTienda(tienda);
     		
-    		Cliente cliente = clienteRepository.findByDocumento(compraRequestDTO.getCliente().getDocumento());
+    		Cliente cliente = clienteRepository.findByDocumentoAndTipoDocumento_Nombre(compraRequestDTO.getCliente().getDocumento(),compraRequestDTO.getCliente().getTipo_documento());
     		if(cliente != null) { // el cliente ya existe
     			compra.setCliente(cliente);
     		} else { // el cliente no existe
+    			cliente = new Cliente();
     			cliente.setDocumento(compraRequestDTO.getCliente().getDocumento());
     			cliente.setNombre(compraRequestDTO.getCliente().getNombre());
     			TipoDocumento tipoDocumento = tipoDocumentoRepository.findByNombre(compraRequestDTO.getCliente().getTipo_documento());
@@ -81,15 +87,27 @@ public class CompraService {
     			}
     		}
     		
-    		for (DetallesCompraDTO producto : compraRequestDTO.getProductos()) {
-    			DetallesCompra detallesCompra = detallesCompraRepository.findByProducto_Nombre(producto.getReferencia());
-    			if (detallesCompra != null) { // el detalles de compra si existe
-    				compra.getDetallesCompras().add(detallesCompra);
+    		List<DetallesCompra> detallesCompras = new ArrayList<>();
+    		
+    		for (DetallesCompraDTO detallesCompraDTO : compraRequestDTO.getProductos()) {
+    			Producto producto = productoRepository.findByReferencia(detallesCompraDTO.getReferencia());
+    			if (producto != null) {
+    				DetallesCompra detallesCompra = new DetallesCompra();
+    				detallesCompra.setCompra(compra);
+    				detallesCompra.setProducto(producto);
+    				detallesCompra.setCantidad(detallesCompraDTO.getCantidad());
+    				detallesCompra.setPrecio(producto.getPrecio());
+    				detallesCompra.setDescuento(detallesCompraDTO.getDescuento());
+    				detallesCompras.add(detallesCompra);
     			} else {
-    				compraDTO.setMessage("No existe ese detalles compra");
-    				return compraDTO; // no existe ese detalles compra
+    				compraDTO.setMessage("No existe ese producto");
+    				return compraDTO;
     			}
     		}
+    		
+    		compra.setDetallesCompras(detallesCompras);
+    		
+    		List<Pago> pagos = new ArrayList();
     		
     		for (PagoDTO mediosPago : compraRequestDTO.getMedios_pago()) {
     			
@@ -99,15 +117,21 @@ public class CompraService {
     				return compraDTO;
     			}
     			
-    			TarjetaTipo tarjetaTipo;
+    			TarjetaTipo tarjetaTipo = null;
     			try {
-    			    tarjetaTipo = TarjetaTipo.valueOf(mediosPago.getTipo_tarjeta().toUpperCase());
-    			    System.out.println("La tarjeta es: " + tarjetaTipo);
+    				if(mediosPago.getTipo_tarjeta() != null) {
+    					tarjetaTipo = TarjetaTipo.valueOf(mediosPago.getTipo_tarjeta().toUpperCase());
+    				}
     			} catch (IllegalArgumentException e) {
     				compraDTO.setMessage("No existe ese tipo de tarjeta");
     				return compraDTO;
     			}
-    			Pago.TarjetaTipo tarjetaTipoPago = Pago.TarjetaTipo.valueOf(tarjetaTipo.name());
+    			
+    			Pago.TarjetaTipo tarjetaTipoPago = null;
+    			
+    			if(tarjetaTipo != null) {
+    				tarjetaTipoPago = Pago.TarjetaTipo.valueOf(tarjetaTipo.name());
+    			}
     			
 				Pago pago = new Pago();
 				pago.setCompra(compra);
@@ -115,9 +139,11 @@ public class CompraService {
 				pago.setTarjetaTipo(tarjetaTipoPago);
 				pago.setCuotas(mediosPago.getCuotas()<=0 ? 0 : mediosPago.getCuotas());
 				pago.setValor(mediosPago.getValor());
-				compra.getPagos().add(pago);
+				pagos.add(pago);
 				compra.setTotal(compra.getTotal().add(pago.getValor()));
     		}
+    		
+    		compra.setPagos(pagos);
     		
 			Vendedor vendedor = vendedorRepository.findByDocumento(compraRequestDTO.getVendedor().getDocumento());
 			if (vendedor != null) {

@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import co.edu.ufps.entities.Cliente;
 
 public interface ClienteRepository extends JpaRepository<Cliente,Integer>{
-	public Cliente findByDocumento (String documento);
+	public Cliente findByDocumentoAndTipoDocumento_Nombre (String documento, String tipoDocumento);
 	public boolean existsByDocumento (String documento);
 }
