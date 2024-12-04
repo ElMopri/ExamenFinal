@@ -1,7 +1,7 @@
 package co.edu.ufps.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import lombok.Data;
 
@@ -9,5 +9,5 @@ import lombok.Data;
 public class FacturaDTO {
 	private int numero;
 	private BigDecimal total;
-	private LocalDateTime fecha;
+	private LocalDate fecha;
 }

@@ -75,6 +75,7 @@ public class CompraService {
     			compra.setCliente(cliente);
     		} else { // el cliente no existe
     			cliente = new Cliente();
+    			cliente.setId(1);
     			cliente.setDocumento(compraRequestDTO.getCliente().getDocumento());
     			cliente.setNombre(compraRequestDTO.getCliente().getNombre());
     			TipoDocumento tipoDocumento = tipoDocumentoRepository.findByNombre(compraRequestDTO.getCliente().getTipo_documento());
@@ -92,29 +93,34 @@ public class CompraService {
     		for (DetallesCompraDTO detallesCompraDTO : compraRequestDTO.getProductos()) {
     			Producto producto = productoRepository.findByReferencia(detallesCompraDTO.getReferencia());
     			if (producto != null) {
-    				DetallesCompra detallesCompra = new DetallesCompra();
-    				detallesCompra.setCompra(compra);
-    				detallesCompra.setProducto(producto);
-    				detallesCompra.setCantidad(detallesCompraDTO.getCantidad());
-    				detallesCompra.setPrecio(producto.getPrecio());
-    				detallesCompra.setDescuento(detallesCompraDTO.getDescuento());
-    				detallesCompras.add(detallesCompra);
+    				if(detallesCompraDTO.getCantidad()<=producto.getCantidad()) {
+	    				DetallesCompra detallesCompra = new DetallesCompra();
+	    				detallesCompra.setCompra(compra);
+	    				detallesCompra.setProducto(producto);
+	    				detallesCompra.setCantidad(detallesCompraDTO.getCantidad());
+	    				detallesCompra.setPrecio(producto.getPrecio());
+	    				detallesCompra.setDescuento(detallesCompraDTO.getDescuento());
+	    				detallesCompras.add(detallesCompra);
+    				} else {
+        				compraDTO.setMessage("La cantidad a comprar de "+producto.getNombre()+" supera el máximo del producto en tienda");
+        				return compraDTO; //Status 403
+    				}
     			} else {
-    				compraDTO.setMessage("No existe ese producto");
-    				return compraDTO;
+    				compraDTO.setMessage("La referencia del producto "+detallesCompraDTO.getReferencia()+" no existe, por favor revisar los datos");
+    				return compraDTO; //Status 404
     			}
     		}
     		
     		compra.setDetallesCompras(detallesCompras);
     		
-    		List<Pago> pagos = new ArrayList();
+    		List<Pago> pagos = new ArrayList<Pago>();
     		
     		for (PagoDTO mediosPago : compraRequestDTO.getMedios_pago()) {
     			
     			TipoPago tipoPago = tipoPagoRepository.findByNombre(mediosPago.getTipo_pago());
     			if (tipoPago == null) {
-    				compraDTO.setMessage("No existe ese tipo de pago");
-    				return compraDTO;
+    				compraDTO.setMessage("Tipo de pago "+mediosPago.getTipo_pago()+" no permitido en la tienda");
+    				return compraDTO; //Status 403
     			}
     			
     			TarjetaTipo tarjetaTipo = null;
@@ -149,18 +155,24 @@ public class CompraService {
 			if (vendedor != null) {
 				compra.setVendedor(vendedor);
 			} else {
-				compraDTO.setMessage("No existe ese vendedor");
-				return compraDTO; // vendedor no existe
+				compraDTO.setMessage("El vendedor no existe en la tienda");
+				return compraDTO; //Status 404
 			}
 			
 			Cajero cajero = cajeroRepository.findByToken(compraRequestDTO.getCajero().getToken());
 			if (cajero != null) {
-				compra.setCajero(cajero);
+				if (cajero.getTienda().getId().equals(tienda.getId())) {
+					compra.setCajero(cajero);
+				} else {
+					compraDTO.setMessage("El cajero no está asignado a esta tienda");
+					return compraDTO; //Status 403
+				}
 			} else {
-				compraDTO.setMessage("No existe ese cajero");
-				return compraDTO; // el cajero no existe
+				compraDTO.setMessage("El token no corresponde a ningún cajero en la tienda");
+				return compraDTO; //Status 404
 			}
 			compra.setImpuestos(compraRequestDTO.getImpuesto());
+			compra.setObservaciones("Ninguna");
 			compra = compraRepository.save(compra);
 			
 			FacturaDTO facturaDTO= new FacturaDTO();
@@ -168,7 +180,7 @@ public class CompraService {
 			facturaDTO.setTotal(compra.getTotal());
 			facturaDTO.setFecha(compra.getFecha());
 			
-			compraDTO.setStatus("succes");
+			compraDTO.setStatus("success");
 			compraDTO.setMessage("la factura se a creado correctamente con el numero: "+compra.getId());
 			compraDTO.setData(facturaDTO);
 			

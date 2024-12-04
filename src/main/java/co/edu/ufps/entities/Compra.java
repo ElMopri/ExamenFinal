@@ -1,7 +1,7 @@
 package co.edu.ufps.entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,7 +42,7 @@ public class Compra {
     @Column(name = "impuestos", precision = 5, scale = 2, nullable = false)
     private BigDecimal impuestos = BigDecimal.ZERO;
     @Column(name = "fecha", nullable = false)
-    private LocalDateTime fecha = LocalDateTime.now();
+    private LocalDate fecha = LocalDate.now();
 	@Column(length = 1000)
 	private String observaciones;
 	

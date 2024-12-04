@@ -1,6 +1,7 @@
 package co.edu.ufps.entities;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -35,4 +36,17 @@ public class Tienda {
 	@OneToMany(mappedBy = "tienda", cascade = CascadeType.ALL)
 	@JsonIgnore
 	List<Compra> compras = null;
+	
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Tienda tienda = (Tienda) obj;
+        return Objects.equals(id, tienda.id);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
