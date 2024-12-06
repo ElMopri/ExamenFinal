@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.ufps.dto.CompraDTO;
 import co.edu.ufps.dto.CompraRequestDTO;
+import co.edu.ufps.dto.FacturaRequestDTO;
+import co.edu.ufps.dto.FacturaResponseDTO;
 import co.edu.ufps.services.CompraService;
 
 @RestController
@@ -35,5 +37,10 @@ public class CompraController {
     	}
     	
         return ResponseEntity.ok(respuesta);
+    }
+    
+    @PostMapping("/consultar/{uuid}")
+    public ResponseEntity<FacturaResponseDTO> consultar(@PathVariable String uuid,@RequestBody FacturaRequestDTO facturaRequestDTO) {
+    	return ResponseEntity.ok(compraService.consultar(uuid, facturaRequestDTO));
     }
 }
